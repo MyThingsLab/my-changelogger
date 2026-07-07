@@ -1,5 +1,7 @@
 # my-changelogger
 
+[![CI](https://github.com/MyThingsLab/my-changelogger/actions/workflows/ci.yml/badge.svg)](https://github.com/MyThingsLab/my-changelogger/actions/workflows/ci.yml) [![codecov](https://codecov.io/gh/MyThingsLab/my-changelogger/branch/main/graph/badge.svg)](https://codecov.io/gh/MyThingsLab/my-changelogger) ![Python](https://img.shields.io/badge/python-3.11%2B-blue) [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+
 Turns a repo's [`dev-ledger`](../mythings-core/docs/PROVENANCE.md) `ship`/`fix`/
 `build` entries into a `CHANGELOG.md` section and opens a PR, for the
 [MyThingsLab](../mythings-core) fleet.
