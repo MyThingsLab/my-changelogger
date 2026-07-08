@@ -69,11 +69,6 @@ def test_prepend_section_keeps_older_sections_below(tmp_path: Path) -> None:
     assert "first release" in text
 
 
-from pathlib import Path
-
-from mychangelogger.changelog import prepend_section
-
-
 def test_prepend_section_inserts_new_section_before_existing_entries(tmp_path: Path) -> None:
     changelog = tmp_path / "CHANGELOG.md"
     changelog.write_text(
