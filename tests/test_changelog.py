@@ -67,3 +67,19 @@ def test_prepend_section_keeps_older_sections_below(tmp_path: Path) -> None:
     text = path.read_text(encoding="utf-8")
     assert text.index("## [Unreleased]") < text.index("## [1.0.0]")
     assert "first release" in text
+
+
+def test_prepend_section_inserts_new_section_before_existing_entries(tmp_path: Path) -> None:
+    changelog = tmp_path / "CHANGELOG.md"
+    changelog.write_text(
+        "# Changelog\n\n## [0.0.1] - 2026-07-01\n### Fixed\n- old fix\n",
+        encoding="utf-8",
+    )
+
+    prepend_section(changelog, "## [Unreleased]\n### Shipped\n- new feature")
+
+    assert changelog.read_text(encoding="utf-8") == (
+        "# Changelog\n\n"
+        "## [Unreleased]\n### Shipped\n- new feature\n\n"
+        "## [0.0.1] - 2026-07-01\n### Fixed\n- old fix\n"
+    )
