@@ -4,7 +4,7 @@ You are developing **my-changelogger**, a MyThingsLab My[X] tool.
 
 **Inherited rules:** obey [`./HARNESS.md`](./HARNESS.md) in full — the vendored
 MyThingsLab build-harness rules. Do not restate or override them. Anything not
-covered here defers to `HARNESS.md`, then `mythings-core/docs/CONVENTIONS.md`.
+covered here defers to `HARNESS.md`, then `my-things-core/docs/CONVENTIONS.md`.
 
 ## This tool
 
@@ -18,7 +18,7 @@ covered here defers to `HARNESS.md`, then `mythings-core/docs/CONVENTIONS.md`.
 - **Invariants / rules:** touches exactly one file (`CHANGELOG.md`), never
   edits source. Every `git`/`gh` side effect is wrapped as
   `Action(kind="bash", ...)` and run through `Policy.evaluate` first; a `DENY`
-  aborts and logs `outcome=failure`. Runtime dep is `mythings-core` only (not
+  aborts and logs `outcome=failure`. Runtime dep is `my-things-core` only (not
   `my-guard`) — like MyReporter, its default `Policy` trivially allows
   (opening a non-destructive PR needs no gate), and a real `Policy` (e.g.
   MyGuard's `Guard`) can be injected by the caller. Opens exactly one PR, never
