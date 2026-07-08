@@ -2,9 +2,9 @@
 
 [![CI](https://github.com/MyThingsLab/my-changelogger/actions/workflows/ci.yml/badge.svg)](https://github.com/MyThingsLab/my-changelogger/actions/workflows/ci.yml) [![codecov](https://codecov.io/gh/MyThingsLab/my-changelogger/branch/main/graph/badge.svg)](https://codecov.io/gh/MyThingsLab/my-changelogger) ![Python](https://img.shields.io/badge/python-3.11%2B-blue) [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
-Turns a repo's [`dev-ledger`](../mythings-core/docs/PROVENANCE.md) `ship`/`fix`/
+Turns a repo's [`dev-ledger`](../my-things-core/docs/PROVENANCE.md) `ship`/`fix`/
 `build` entries into a `CHANGELOG.md` section and opens a PR, for the
-[MyThingsLab](../mythings-core) fleet.
+[MyThingsLab](../my-things-core) fleet.
 
 ## How it works
 
@@ -32,7 +32,7 @@ mychangelogger update [--version X.Y.Z] [--repo owner/name] [--base main]
 
 ```bash
 python -m venv .venv && source .venv/bin/activate
-pip install -e ../mythings-core -e ".[dev]"
+pip install -e ../my-things-core -e ".[dev]"
 pytest
 ```
 
