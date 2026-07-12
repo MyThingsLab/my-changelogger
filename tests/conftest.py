@@ -6,30 +6,25 @@ from pathlib import Path
 import pytest
 from mythings.ledger import Ledger, LedgerEntry
 
+# Shared fakes come from mythings.testing (plain imports; aliased fixture
+# re-export + getfixturevalue wrapper per core docs/CONVENTIONS.md).
+from mythings.testing import FakeGh
+from mythings.testing import clean_git_env as _shared_clean_git_env  # noqa: F401
+
 
 @pytest.fixture(autouse=True)
-def _clean_git_env(monkeypatch: pytest.MonkeyPatch) -> None:
-    # pre-commit runs hooks with GIT_DIR/GIT_INDEX_FILE set; they leak into the
-    # git subprocesses these tests spawn (and into isolation.Workspace) and break
-    # worktree ops on the throwaway repo. Real MyChangelogger runs aren't inside a hook.
-    for var in ("GIT_DIR", "GIT_INDEX_FILE", "GIT_WORK_TREE", "GIT_OBJECT_DIRECTORY"):
-        monkeypatch.delenv(var, raising=False)
+def _clean_git_env(request: pytest.FixtureRequest) -> None:
+    # Real git worktrees in every test; hook-launched pytest (pre-commit)
+    # must not leak GIT_* into them.
+    request.getfixturevalue("_shared_clean_git_env")
 
 
 def entry(kind: str, outcome: str, detail: str, *, ts: str) -> LedgerEntry:
     return LedgerEntry(tool="claude-code", kind=kind, outcome=outcome, detail=detail, ts=ts)
 
 
-class FakeRunner:
-    # Mocks only the `gh` subprocess boundary.
-    def __init__(self) -> None:
-        self.calls: list[list[str]] = []
-
-    def __call__(self, argv: list[str]) -> str:
-        self.calls.append(argv)
-        if argv[:2] == ["pr", "create"]:
-            return "https://github.com/owner/name/pull/9\n"
-        raise AssertionError(f"unexpected gh call: {argv}")
+def fake_gh() -> FakeGh:
+    return FakeGh({("pr", "create"): "https://github.com/owner/name/pull/9\n"})
 
 
 def _git(repo: Path, *argv: str) -> None:
@@ -37,6 +32,8 @@ def _git(repo: Path, *argv: str) -> None:
 
 
 def make_target_repo(tmp_path: Path, dev_ledger: list[LedgerEntry]) -> Path:
+    # Not the shared make_git_repo: the tree may be empty apart from the
+    # dev-ledger (--allow-empty), which is the case the tool must handle.
     origin = tmp_path / "origin.git"
     subprocess.run(["git", "init", "--bare", str(origin)], check=True, capture_output=True)
 
