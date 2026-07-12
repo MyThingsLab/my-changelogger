@@ -6,12 +6,12 @@ from mythings.github import GitHub
 from mythings.ledger import Ledger
 from mythings.policy import Action, Decision, PolicyResult
 
-from conftest import FakeRunner, entry, make_target_repo
+from conftest import entry, fake_gh, make_target_repo
 from mychangelogger.changelogger import Changelogger
 
 
-def _changelogger(repo: Path, tmp_path: Path, **kw) -> tuple[Changelogger, FakeRunner, Ledger]:
-    fake = FakeRunner()
+def _changelogger(repo: Path, tmp_path: Path, **kw) -> tuple[Changelogger, fake_gh, Ledger]:
+    fake = fake_gh()
     ledger = Ledger(tmp_path / "ledger.jsonl")
     github = GitHub("owner/name", runner=fake)
     changelogger = Changelogger(repo=repo, ledger=ledger, github=github, **kw)
