@@ -27,9 +27,19 @@ def main(argv: list[str] | None = None) -> int:
     update.add_argument("--repo", help="GitHub slug owner/name for the PR (defaults to the local remote)")  # noqa: E501
     update.add_argument("--base", default="main", help="base branch for the PR")
     update.add_argument("--source", type=Path, default=Path.cwd(), help="local git repo to update")
-    update.add_argument("--ledger", type=Path, default=Path(".mythings/ledger.jsonl"))
+    update.add_argument(
+        "--ledger", type=Path, default=None, help="default: --source/.mythings/ledger.jsonl"
+    )
 
     args = parser.parse_args(argv)
+    # Relative to --source, not cwd: fleet_cycle.py runs this with cwd fixed
+    # at the workspace root but --source set to the repo under update. A
+    # cwd-relative default meant last_changelog_ts's cursor was recorded to
+    # one shared root-level ledger instead of each repo's own, so every
+    # repo's "since last run" check was reading a cursor some *other* repo's
+    # run had advanced.
+    if args.ledger is None:
+        args.ledger = args.source / ".mythings" / "ledger.jsonl"
     changelogger = Changelogger(
         repo=args.source,
         ledger=Ledger(args.ledger),

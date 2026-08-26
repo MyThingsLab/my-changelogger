@@ -57,6 +57,34 @@ def test_base_flag_reaches_the_changelogger(monkeypatch: pytest.MonkeyPatch) -> 
     assert captured["kwargs"]["base"] == "dev"
 
 
+def test_ledger_defaults_relative_to_source_not_cwd(
+    monkeypatch: pytest.MonkeyPatch, tmp_path
+) -> None:
+    # Regression: fleet_cycle.py runs `mychangelogger update --source <repo>`
+    # with cwd fixed at the workspace root. A cwd-relative --ledger default
+    # meant last_changelog_ts's cursor was recorded to one shared root ledger,
+    # so every repo's "since last run" check read a cursor some other repo's
+    # run had advanced.
+    captured = _stub_changelogger(monkeypatch, Result("success", None, None, "d"))
+    other_repo = tmp_path / "some-other-repo"
+    other_repo.mkdir()
+
+    cli.main(["update", "--source", str(other_repo)])
+
+    assert captured["kwargs"]["ledger"].path == other_repo / ".mythings" / "ledger.jsonl"
+
+
+def test_explicit_ledger_still_overrides_source(
+    monkeypatch: pytest.MonkeyPatch, tmp_path
+) -> None:
+    captured = _stub_changelogger(monkeypatch, Result("success", None, None, "d"))
+    explicit = tmp_path / "elsewhere" / "ledger.jsonl"
+
+    cli.main(["update", "--source", str(tmp_path), "--ledger", str(explicit)])
+
+    assert captured["kwargs"]["ledger"].path == explicit
+
+
 def test_prints_rendered_result(
     monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
