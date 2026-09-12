@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import subprocess
 from pathlib import Path
 
 from mythings.github import GitHub
@@ -67,6 +68,39 @@ def test_second_run_is_incremental(tmp_path: Path) -> None:
     second = changelogger.update()
 
     assert second.outcome == "skipped"  # nothing new since the first run's write
+
+
+def test_unreleased_branch_is_reusable_across_runs(tmp_path: Path) -> None:
+    # `repo` is the fleet's long-lived local checkout, not a throwaway per-run
+    # clone -- a second run against it (new work landed before the first PR
+    # was merged) must not fail because the branch from last time is still
+    # sitting there.
+    repo = make_target_repo(
+        tmp_path,
+        dev_ledger=[entry("ship", "success", "released v0.0.1", ts="2026-07-06T01:00:00Z")],
+    )
+    changelogger, fake, ledger = _changelogger(repo, tmp_path)
+    first = changelogger.update()
+    assert first.outcome == "success"
+
+    # last_changelog_ts is the *changelog* entry's own real wall-clock ts (set
+    # by the first update() call above), not the target ledger entry's fake
+    # one -- so this needs to be later than "now", not later than 2026-07-06.
+    Ledger(repo / "dev-ledger" / "s0.jsonl").append(
+        entry("fix", "success", "fixed a bug", ts="2099-01-01T00:00:00Z")
+    )
+    subprocess.run(["git", "-C", str(repo), "add", "-A"], check=True, capture_output=True)
+    subprocess.run(
+        ["git", "-C", str(repo), "commit", "-m", "more work"], check=True, capture_output=True
+    )
+    subprocess.run(
+        ["git", "-C", str(repo), "push", "origin", "main"], check=True, capture_output=True
+    )
+
+    second = changelogger.update()
+
+    assert second.outcome == "success"
+    assert len([c for c in fake.calls if c[:2] == ["pr", "create"]]) == 2
 
 
 class _DenyAll:

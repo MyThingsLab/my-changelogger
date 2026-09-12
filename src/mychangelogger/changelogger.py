@@ -79,7 +79,14 @@ class Changelogger:
 
     def _open_pr(self, tree: Path, version: str | None) -> PullRequest:
         branch = f"my-changelogger/{version}" if version else "my-changelogger/unreleased"
-        self._git(tree, ["checkout", "-b", branch])
+        # This repo's local checkout is long-lived (the fleet reuses it across
+        # every cycle): if an earlier run's PR on this same branch is still
+        # unmerged, checkout -b fails forever after the first collision, and a
+        # plain push would then be rejected as non-fast-forward against that
+        # stale remote history. Drop any prior attempt at both ends first --
+        # there is nothing in it worth preserving across attempts.
+        self._delete_remote_branch_if_present(tree, branch)
+        self._git(tree, ["checkout", "-B", branch])
         self._git(tree, ["add", _CHANGELOG])
         self._git(tree, ["commit", "-m", f"docs: changelog for {version or 'unreleased'}"])
         self._git(tree, ["push", "-u", "origin", branch])
@@ -93,6 +100,19 @@ class Changelogger:
         proc = subprocess.run(["git", "-C", str(tree), *argv], capture_output=True, text=True)
         if proc.returncode != 0:
             raise RuntimeError(f"git {' '.join(argv)} failed: {proc.stderr.strip()}")
+
+    def _delete_remote_branch_if_present(self, tree: Path, branch: str) -> None:
+        # Best-effort: the common case is that this branch doesn't exist yet,
+        # which git reports as a failure. Only a genuine problem (auth, a
+        # protected branch) would also break the push right after this, where
+        # it surfaces on its own -- so there is nothing useful to do with this
+        # call's exit code except ignore it.
+        self._guard(f"git push origin --delete {branch}")
+        subprocess.run(
+            ["git", "-C", str(tree), "push", "origin", "--delete", branch],
+            capture_output=True,
+            text=True,
+        )
 
     def _guard(self, command: str) -> None:
         result = self.policy.evaluate(Action(kind="bash", payload={"command": command}))
